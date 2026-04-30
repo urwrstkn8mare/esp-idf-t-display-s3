@@ -1,4 +1,6 @@
 /build/
 /cmake-build-debug/
+build.clang
+managed_components
 .idea
 /sdkconfig.old
