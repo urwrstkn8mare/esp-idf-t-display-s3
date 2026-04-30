@@ -226,11 +226,6 @@ esp_err_t tdisplays3_init(tdisplays3_handle_t *handle)
     return ESP_ERR_INVALID_STATE;
 }
 
-lv_display_t *tdisplays3_display_get(tdisplays3_handle_t *handle)
-{
-    return handle ? handle->display : NULL;
-}
-
 bool tdisplays3_display_lock(uint32_t timeout_ms)
 {
     return lvgl_port_lock(timeout_ms);
@@ -239,12 +234,6 @@ bool tdisplays3_display_lock(uint32_t timeout_ms)
 void tdisplays3_display_unlock(void)
 {
     lvgl_port_unlock();
-}
-
-bool tdisplays3_button_pressed(tdisplays3_button_t button)
-{
-    const gpio_num_t pin = (button == TDISPLAYS3_BUTTON_1) ? BTN_PIN_NUM_1 : BTN_PIN_NUM_2;
-    return gpio_get_level(pin) == 0;
 }
 
 esp_err_t tdisplays3_button_register_callback(tdisplays3_button_t button, tdisplays3_button_cb_t callback)

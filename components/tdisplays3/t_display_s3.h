@@ -25,10 +25,8 @@ typedef struct {
 typedef void (*tdisplays3_button_cb_t)(button_event_t event);
 
 esp_err_t tdisplays3_init(tdisplays3_handle_t *handle);
-lv_display_t *tdisplays3_display_get(tdisplays3_handle_t *handle);
 bool tdisplays3_display_lock(uint32_t timeout_ms);
 void tdisplays3_display_unlock(void);
-bool tdisplays3_button_pressed(tdisplays3_button_t button);
 esp_err_t tdisplays3_button_register_callback(tdisplays3_button_t button, tdisplays3_button_cb_t callback);
 
 #ifdef __cplusplus
