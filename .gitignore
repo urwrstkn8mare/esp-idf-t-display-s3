@@ -3,4 +3,5 @@
 build.clang
 managed_components
 .idea
+.cache
 /sdkconfig.old

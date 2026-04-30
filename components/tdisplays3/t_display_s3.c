@@ -3,6 +3,7 @@
 
 #include "t_display_s3.h"
 #include <string.h>
+#include "button_gpio.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
 #include "esp_lcd_panel_st7789.h"
@@ -39,6 +40,9 @@
 #define LVGL_BUFFER_SIZE       (((LCD_H_RES * LCD_V_RES) / 10) + LCD_H_RES)
 
 static bool s_initialized = false;
+static button_handle_t s_button_handles[2] = {0};
+static tdisplays3_button_cb_t s_user_callbacks[2] = {0};
+static void *s_user_callback_data[2] = {0};
 
 static void configure_gpio(void)
 {
@@ -69,6 +73,47 @@ static void configure_gpio(void)
         .pull_up_en = GPIO_PULLUP_ENABLE,
     };
     ESP_ERROR_CHECK(gpio_config(&buttons));
+}
+
+static int button_index_from_handle(button_handle_t button_handle)
+{
+    for (int i = 0; i < 2; i++) {
+        if (s_button_handles[i] == button_handle) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void button_dispatch_cb(void *arg, void *usr_data)
+{
+    (void)usr_data;
+    const button_handle_t button_handle = (button_handle_t)arg;
+    const int idx = button_index_from_handle(button_handle);
+    if (idx < 0 || s_user_callbacks[idx] == NULL) {
+        return;
+    }
+
+    const button_event_t event = iot_button_get_event(button_handle);
+    s_user_callbacks[idx]((tdisplays3_button_t)idx, event, s_user_callback_data[idx]);
+}
+
+static esp_err_t init_buttons(void)
+{
+    const gpio_num_t pins[2] = {BTN_PIN_NUM_1, BTN_PIN_NUM_2};
+
+    for (int i = 0; i < 2; i++) {
+        const button_config_t btn_cfg = {0};
+        const button_gpio_config_t btn_gpio_cfg = {
+            .gpio_num = (int32_t)pins[i],
+            .active_level = 0,
+        };
+        ESP_RETURN_ON_ERROR(
+            iot_button_new_gpio_device(&btn_cfg, &btn_gpio_cfg, &s_button_handles[i]),
+            TAG,
+            "button create failed");
+    }
+    return ESP_OK;
 }
 
 static esp_err_t init_display(tdisplays3_handle_t *handle)
@@ -160,17 +205,6 @@ static esp_err_t init_display(tdisplays3_handle_t *handle)
         return ESP_FAIL;
     }
 
-    if (!lvgl_port_lock(0)) {
-        return ESP_FAIL;
-    }
-    handle->label = lv_label_create(lv_screen_active());
-    lv_obj_set_width(handle->label, LCD_H_RES);
-    lv_obj_set_style_text_align(handle->label, LV_TEXT_ALIGN_LEFT, 0);
-    lv_label_set_long_mode(handle->label, LV_LABEL_LONG_WRAP);
-    lv_obj_align(handle->label, LV_ALIGN_TOP_LEFT, 8, 8);
-    lv_label_set_text(handle->label, "");
-    lvgl_port_unlock();
-
     return ESP_OK;
 }
 
@@ -183,6 +217,7 @@ esp_err_t tdisplays3_init(tdisplays3_handle_t *handle)
 
     if (!s_initialized) {
         configure_gpio();
+        ESP_RETURN_ON_ERROR(init_buttons(), TAG, "button init failed");
         ESP_RETURN_ON_ERROR(init_display(handle), TAG, "display init failed");
         s_initialized = true;
         return ESP_OK;
@@ -192,22 +227,40 @@ esp_err_t tdisplays3_init(tdisplays3_handle_t *handle)
     return ESP_ERR_INVALID_STATE;
 }
 
-esp_err_t tdisplays3_display_text(tdisplays3_handle_t *handle, const char *text)
+lv_display_t *tdisplays3_display_get(tdisplays3_handle_t *handle)
 {
-    if (handle == NULL || handle->label == NULL || text == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    return handle ? handle->display : NULL;
+}
 
-    if (!lvgl_port_lock(0)) {
-        return ESP_FAIL;
-    }
-    lv_label_set_text(handle->label, text);
+bool tdisplays3_display_lock(uint32_t timeout_ms)
+{
+    return lvgl_port_lock(timeout_ms);
+}
+
+void tdisplays3_display_unlock(void)
+{
     lvgl_port_unlock();
-    return ESP_OK;
 }
 
 bool tdisplays3_button_pressed(tdisplays3_button_t button)
 {
     const gpio_num_t pin = (button == TDISPLAYS3_BUTTON_1) ? BTN_PIN_NUM_1 : BTN_PIN_NUM_2;
     return gpio_get_level(pin) == 0;
+}
+
+esp_err_t tdisplays3_button_register_callback(tdisplays3_button_t button,
+                                              button_event_t event,
+                                              button_event_args_t *event_args,
+                                              tdisplays3_button_cb_t callback,
+                                              void *user_data)
+{
+    if (!s_initialized || button > TDISPLAYS3_BUTTON_2 || callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    s_user_callbacks[button] = callback;
+    s_user_callback_data[button] = user_data;
+
+    return iot_button_register_cb(
+        s_button_handles[button], event, event_args, button_dispatch_cb, NULL);
 }
