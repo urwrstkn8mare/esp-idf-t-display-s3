@@ -42,7 +42,6 @@
 static bool s_initialized = false;
 static button_handle_t s_button_handles[2] = {0};
 static tdisplays3_button_cb_t s_user_callbacks[2] = {0};
-static void *s_user_callback_data[2] = {0};
 
 static void configure_gpio(void)
 {
@@ -95,7 +94,7 @@ static void button_dispatch_cb(void *arg, void *usr_data)
     }
 
     const button_event_t event = iot_button_get_event(button_handle);
-    s_user_callbacks[idx]((tdisplays3_button_t)idx, event, s_user_callback_data[idx]);
+    s_user_callbacks[idx](event);
 }
 
 static esp_err_t init_buttons(void)
@@ -248,19 +247,23 @@ bool tdisplays3_button_pressed(tdisplays3_button_t button)
     return gpio_get_level(pin) == 0;
 }
 
-esp_err_t tdisplays3_button_register_callback(tdisplays3_button_t button,
-                                              button_event_t event,
-                                              button_event_args_t *event_args,
-                                              tdisplays3_button_cb_t callback,
-                                              void *user_data)
+esp_err_t tdisplays3_button_register_callback(tdisplays3_button_t button, tdisplays3_button_cb_t callback)
 {
     if (!s_initialized || button > TDISPLAYS3_BUTTON_2 || callback == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (s_user_callbacks[button] != NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     s_user_callbacks[button] = callback;
-    s_user_callback_data[button] = user_data;
-
-    return iot_button_register_cb(
-        s_button_handles[button], event, event_args, button_dispatch_cb, NULL);
+    ESP_RETURN_ON_ERROR(
+        iot_button_register_cb(s_button_handles[button], BUTTON_PRESS_DOWN, NULL, button_dispatch_cb, NULL),
+        TAG,
+        "button down callback register failed");
+    ESP_RETURN_ON_ERROR(
+        iot_button_register_cb(s_button_handles[button], BUTTON_PRESS_UP, NULL, button_dispatch_cb, NULL),
+        TAG,
+        "button up callback register failed");
+    return ESP_OK;
 }
