@@ -58,6 +58,4 @@ void app_main(void)
 
     ESP_ERROR_CHECK(tdisplays3_button_register_callback(TDISPLAYS3_BUTTON_1, button1_event_cb));
     ESP_ERROR_CHECK(tdisplays3_button_register_callback(TDISPLAYS3_BUTTON_2, button2_event_cb));
-
-    vTaskDelete(NULL);
 }
