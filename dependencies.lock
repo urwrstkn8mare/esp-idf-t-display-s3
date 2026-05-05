@@ -48,11 +48,22 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 9.5.0
+  urwrstkn8mare/icm20948:
+    component_hash: 47b79dad79c5eef8dba54962fcea2662e25def10e79c391a4f6ab83a81a9f0ec
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/urwrstkn8mare/icm20948.git
+      path: .
+      type: git
+    version: 2291deea2040778b482cfd39a2f425b029330145
 direct_dependencies:
 - espressif/button
 - espressif/esp_lvgl_port
 - idf
 - lvgl/lvgl
-manifest_hash: 561f20a01184ce9bc8692711d9342de35f22636fa91607cd5145c880a286cca6
+- urwrstkn8mare/icm20948
+manifest_hash: b83a71b023df0001b2c916b5beacda74015e49bfe4738aa24089e5cb6273e4ef
 target: esp32s3
 version: 2.0.0

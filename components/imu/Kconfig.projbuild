@@ -1,0 +1,38 @@
+menu "IMU Settings"
+
+    config IMU_I2C_PORT
+        int "IMU I2C port"
+        range 0 1
+        default 0
+        help
+            ESP-IDF I2C controller number used by the IMU component.
+
+    config IMU_I2C_SDA_GPIO
+        int "IMU I2C SDA GPIO"
+        range 0 48
+        default 16
+        help
+            SDA pin for the IMU I2C bus.
+
+    config IMU_I2C_SCL_GPIO
+        int "IMU I2C SCL GPIO"
+        range 0 48
+        default 21
+        help
+            SCL pin for the IMU I2C bus.
+
+    config IMU_I2C_FREQ_HZ
+        int "IMU I2C bus frequency (Hz)"
+        range 10000 1000000
+        default 400000
+        help
+            I2C clock frequency used for IMU communication.
+
+    config IMU_I2C_ADDRESS
+        hex "ICM20948 I2C address"
+        range 0x00 0x7F
+        default 0x69
+        help
+            I2C address of the ICM20948 device (usually 0x68 or 0x69).
+
+endmenu
