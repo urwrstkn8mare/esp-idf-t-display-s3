@@ -143,8 +143,6 @@ static esp_err_t init_display(tdisplays3_handle_t *handle)
         },
         .bus_width = 8,
         .max_transfer_bytes = LCD_H_RES * 100 * sizeof(uint16_t),
-        .psram_trans_align = LCD_PSRAM_TRANS_ALIGN,
-        .sram_trans_align = LCD_SRAM_TRANS_ALIGN,
     };
     ESP_RETURN_ON_ERROR(esp_lcd_new_i80_bus(&bus_config, &i80_bus), TAG, "i80 bus init failed");
 
