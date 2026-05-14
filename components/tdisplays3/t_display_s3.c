@@ -9,6 +9,7 @@
 #include "esp_lcd_panel_st7789.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
+#include "sdkconfig.h"
 
 #define TAG "tdisplays3"
 
@@ -31,13 +32,13 @@
 #define BTN_PIN_NUM_1 GPIO_NUM_0
 #define BTN_PIN_NUM_2 GPIO_NUM_14
 
-#define LCD_H_RES              320
-#define LCD_V_RES              170
+#define LCD_H_RES               320
+#define LCD_V_RES               170
 #define LCD_PIXEL_CLOCK_HZ     (17 * 1000 * 1000)
 #define LCD_I80_TRANS_QUEUE_SIZE 20
-#define LCD_PSRAM_TRANS_ALIGN  64
-#define LCD_SRAM_TRANS_ALIGN   4
-#define LVGL_BUFFER_SIZE       (((LCD_H_RES * LCD_V_RES) / 10) + LCD_H_RES)
+#define LCD_PSRAM_TRANS_ALIGN   64
+#define LCD_SRAM_TRANS_ALIGN    4
+#define LVGL_BUFFER_SIZE        (((LCD_H_RES * LCD_V_RES) / 10) + LCD_H_RES)
 
 static bool s_initialized = false;
 static button_handle_t s_button_handles[2] = {0};
@@ -119,7 +120,7 @@ static esp_err_t init_display(tdisplays3_handle_t *handle)
 {
     const lvgl_port_cfg_t lvgl_cfg = {
         .task_priority = 2,
-        .task_stack = 4096,
+        .task_stack = CONFIG_TDISPLAYS3_LVGL_TASK_STACK_SIZE,
         .task_affinity = 1,
         .task_max_sleep_ms = 10,
         .timer_period_ms = 5,
@@ -193,7 +194,6 @@ static esp_err_t init_display(tdisplays3_handle_t *handle)
             .mirror_y = true,
         },
         .flags = {
-            .buff_spiram = true,
             .swap_bytes = true,
         },
     };
@@ -205,6 +205,15 @@ static esp_err_t init_display(tdisplays3_handle_t *handle)
     return ESP_OK;
 }
 
+static esp_err_t init_board(tdisplays3_handle_t *handle)
+{
+    configure_gpio();
+    ESP_RETURN_ON_ERROR(init_buttons(), TAG, "button init failed");
+    ESP_RETURN_ON_ERROR(init_display(handle), TAG, "display init failed");
+    s_initialized = true;
+    return ESP_OK;
+}
+
 esp_err_t tdisplays3_init(tdisplays3_handle_t *handle)
 {
     if (handle == NULL) {
@@ -213,11 +222,7 @@ esp_err_t tdisplays3_init(tdisplays3_handle_t *handle)
     memset(handle, 0, sizeof(*handle));
 
     if (!s_initialized) {
-        configure_gpio();
-        ESP_RETURN_ON_ERROR(init_buttons(), TAG, "button init failed");
-        ESP_RETURN_ON_ERROR(init_display(handle), TAG, "display init failed");
-        s_initialized = true;
-        return ESP_OK;
+        return init_board(handle);
     }
 
     ESP_LOGW(TAG, "already initialized");

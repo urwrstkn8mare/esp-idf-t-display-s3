@@ -20,6 +20,10 @@ See `components/tdisplays3/t_display_s3.h`:
 - `tdisplays3_display_unlock()`
 - `tdisplays3_button_register_callback()`
 
+The LVGL task stack size is configured in `menuconfig` via `T-Display-S3 -> LVGL task stack size`. Default is 8192 bytes.
+
+Use `tdisplays3_init()` as before.
+
 Button callback signature:
 
 - `void callback(button_event_t event)`

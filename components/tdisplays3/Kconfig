@@ -1,0 +1,10 @@
+menu "T-Display-S3"
+
+    config TDISPLAYS3_LVGL_TASK_STACK_SIZE
+        int "LVGL task stack size"
+        default 8192
+        range 4096 16384
+        help
+            Stack size in bytes for the internal LVGL task used by the display component.
+
+endmenu
